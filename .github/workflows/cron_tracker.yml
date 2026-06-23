@@ -1,0 +1,32 @@
+name: Autonomous Multi-Agent Corporate Engine
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Automatically executes every 30 minutes 24/7
+  workflow_dispatch: # Activates the manual "Run workflow" override button in your browser
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+
+    - name: Initialize Cloud Python Node
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Provision Cloud Dependencies
+      run: |
+        pip install requests beautifulsoup4 solana solders
+
+    - name: Execute Autonomous On-Chain Pipeline
+      env:
+        CORPORATE_EMAIL_API_KEY: ${{ secrets.CORPORATE_EMAIL_API_KEY }}
+        CORPORATE_SENDER_EMAIL: ${{ secrets.CORPORATE_SENDER_EMAIL }}
+        CUSTOMER_DESTINATION_EMAIL: ${{ secrets.CUSTOMER_DESTINATION_EMAIL }}
+        HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY }}
+      run: |
+        python3 sol_tracker.py
