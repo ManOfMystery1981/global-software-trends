@@ -4,22 +4,29 @@ import sys
 import urllib.request
 from http.server import BaseHTTPRequestHandler
 
+# Force instant unbuffered console output alignment
 sys.stdout.reconfigure(line_buffering=True)
 
 def escape_html(text_string):
+    """Sanitizes raw string variables to prevent Telegram API parse drops."""
     return str(text_string).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 class handler(BaseHTTPRequestHandler):
+    """
+    Official Vercel-compliant serverless execution class routing.
+    Forces direct dynamic environment lookup queries to bypass git history artifacts.
+    """
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
         
-        # Pull keys directly from Vercel's decryption matrix
+        # Force dynamic environment dictionary lookups directly from Vercel's cloud vault settings
         raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
         chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
         
         telegram_status = "SKIPPED_OR_MISSING_KEYS"
         error_logs = "None"
+        signature = "fallback_cloud_sig"
         
         try:
             payload = json.loads(post_data)
@@ -30,7 +37,7 @@ class handler(BaseHTTPRequestHandler):
             signature = escape_html(payload.get("signature") or payload.get("transactionId", "fallback_cloud_sig"))
             
             if raw_token and chat_id:
-                # Strip out any potential accidental 'bot' prefixes or formatting issues
+                # Strip any historical prefix tracking artifacts cleanly
                 bot_token = raw_token[3:] if raw_token.lower().startswith("bot") else raw_token
                 
                 message_text = f"<b>💰 CRITICAL BUSINESS REVENUE LOGGED 💰</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>Engine</b>: Autonomous Data Refinery\n📊 <b>Asset Purchased</b>: Market Intelligence Matrix\n💸 <b>Revenue Collected</b>: {amount_sol} SOL\n📨 <b>Delivery Pipeline</b>: Dispatched to Inbox\n📧 <b>Target Client</b>: <code>{customer_email}</code>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>🟢 System Node Status: 100% Operational</i>"
@@ -44,7 +51,7 @@ class handler(BaseHTTPRequestHandler):
                 
                 req = urllib.request.Request(url, data=api_payload, headers={"Content-Type": "application/json"})
                 try:
-                    with urllib.request.urlopen(req, timeout=8) as response:
+                    with urllib.request.urlopen(req, timeout=10) as response:
                         res_data = json.loads(response.read().decode('utf-8'))
                         if res_data.get("ok"):
                             telegram_status = "SUCCESSFULLY_DELIVERED"
@@ -59,7 +66,7 @@ class handler(BaseHTTPRequestHandler):
             else:
                 telegram_status = "MISSING_ENV_VARIABLES_ON_VERCEL"
                 
-            # Send dynamic runtime status codes back to your terminal window
+            # Send dynamic runtime status codes back to your terminal request window
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -79,3 +86,4 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"status": "CRASHED", "details": str(e)}).encode('utf-8'))
             return
+# Production environment sync block sequence alpha
