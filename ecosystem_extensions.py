@@ -8,82 +8,96 @@ import json
 # Force instant unbuffered terminal printing
 sys.stdout.reconfigure(line_buffering=True)
 
-# Secure environment variable ingestion
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
 def generate_web_dashboard():
-    """Reads your local corporate_ledger.db files and compiles a flat, zero-dependency static HTML file."""
-    print("📊 Compiling Live Performance Portfolio Dashboard HTML...")
+    """Reads your local corporate_ledger.db files and compiles a skinned HTML interface layout."""
+    print("📊 Compiling Live Performance Portfolio Dashboard HTML using custom skin config...")
     try:
+        skin_path = "dashboard_skin.json"
+        if os.path.exists(skin_path):
+            with open(skin_path, "r") as f:
+                skin = json.load(f)
+        else:
+            skin = {
+                "styles": {
+                    "background_color": "#0a0e14", 
+                    "primary_text_color": "#00ff66", 
+                    "secondary_text_color": "#ffffff", 
+                    "card_background": "#101720", 
+                    "font_family": "monospace"
+                }, 
+                "components": {
+                    "system_logs_header": "System Logs", 
+                    "marketing_logs_header": "Marketing Logs"
+                }
+            }
+
+        st = skin["styles"]
+        comp = skin["components"]
+
         conn = sqlite3.connect('corporate_ledger.db')
         cursor = conn.cursor()
-        
-        # Extract the latest process log data lines
         cursor.execute("SELECT id, timestamp, event_type, message FROM system_logs ORDER BY id DESC LIMIT 10")
         system_rows = cursor.fetchall()
-        
-        # Extract your compiled markdown marketing pages data lines
         cursor.execute("SELECT id, timestamp, keyword_targeted, output_file, status FROM marketing_ledger ORDER BY id DESC")
         marketing_rows = cursor.fetchall()
         conn.close()
-        
-        # Build dynamic HTML string injection arrays
+
         sys_logs_html = ""
         for row in system_rows:
-            sys_logs_html += f"<tr><td>{row[0]}</td><td>{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(row[1]))}</td><td><span class='badge'>{row[2]}</span></td><td>{row[3]}</td></tr>"
-            
+            row_id, timestamp, event_type, message = row
+            time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
+            sys_logs_html += f"<tr><td>{row_id}</td><td>{time_str}</td><td><span class='badge'>{event_type}</span></td><td>{message}</td></tr>"
+
         mkt_logs_html = ""
         for row in marketing_rows:
-            mkt_logs_html += f"<tr><td>{row[0]}</td><td>{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(row[1]))}</td><td>#{row[2]}</td><td><code>{row[3]}</code></td><td><span class='success-badge'>{row[4]}</span></td></tr>"
-            
+            row_id, timestamp, keyword, output_file, status = row
+            time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
+            mkt_logs_html += f"<tr><td>{row_id}</td><td>{time_str}</td><td>#{keyword}</td><td><code>{output_file}</code></td><td><span class='badge'>{status}</span></td></tr>"
+
         html_template = f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>Autonomous Data Refinery Matrix - Executive Dashboard</title>
+    <title>Autonomous Data Refinery Matrix - Skinned Dashboard</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {{ font-family: 'Courier New', monospace; background: #0a0e14; color: #00ff66; padding: 20px; }}
+        body {{ background: {st['background_color']}; color: {st['primary_text_color']}; font-family: {st['font_family']}; padding: 20px; }}
         .container {{ max-width: 1200px; margin: 0 auto; }}
-        h1, h2 {{ border-bottom: 2px solid #00ff66; padding-bottom: 10px; color: #ffffff; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; background: #101720; }}
-        th, td {{ border: 1px solid #1f2f40; padding: 12px; text-align: left; }}
-        th {{ background: #1a2330; color: #ffffff; }}
-        .badge {{ background: #ffaa00; color: #000; padding: 2px 6px; font-weight: bold; border-radius: 3px; }}
-        .success-badge {{ background: #00ff66; color: #000; padding: 2px 6px; font-weight: bold; border-radius: 3px; }}
+        h1, h2 {{ border-bottom: 2px solid {st['primary_text_color']}; padding-bottom: 10px; color: {st['secondary_text_color']}; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; background: {st['card_background']}; }}
+        th, td {{ border: 1px solid {st['primary_text_color']}33; padding: 12px; text-align: left; }}
+        th {{ background: #161b22; color: {st['secondary_text_color']}; }}
+        .badge {{ background: {st['primary_text_color']}; color: #000; padding: 2px 6px; font-weight: bold; border-radius: 4px; }}
         code {{ color: #00bfff; }}
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📊 Corporate Engine Management Matrix</h1>
-        <p>System Runtime Status: <strong>ONLINE // OPERATIONAL</strong></p>
+        <p>System Runtime Status: <strong>ONLINE // SKINNED</strong></p>
         
-        <h2>📁 System Process Reconciliation Logs</h2>
+        <h2>{comp['system_logs_header']}</h2>
         <table>
             <tr><th>ID</th><th>Timestamp</th><th>Event Type</th><th>Message Payload</th></tr>
             {sys_logs_html}
         </table>
         
-        <h2>🎯 Autonomous Marketing Advertising Logs</h2>
+        <h2>{comp['marketing_logs_header']}</h2>
         <table>
             <tr><th>ID</th><th>Timestamp</th><th>Keyword Targeted</th><th>Output Path</th><th>Status</th></tr>
             {mkt_logs_html}
         </table>
     </div>
 </body>
-</html>
-"""
+</html>"""
         with open("dashboard.html", "w", encoding="utf-8") as f:
             f.write(html_template)
-        print("✅ Dashboard written successfully to: ./dashboard.html")
+        print("✅ Skinned Dashboard written successfully to: ./dashboard.html")
     except Exception as e:
-        print(f"⚠️ Dashboard compilation aborted: {e}")
+        print(f"⚠️ Dashboard skinning compilation aborted: {e}")
 
 def ping_google_search_indexers(target_slug):
-    """Pings open search sitemap engine gateways to register newly compiled markdown content with correct routing syntax."""
-    # Fixed string formatting to append proper forward slashes and the .md file extension cleanly
+    """Pings open search sitemap engine gateways to register newly compiled markdown content."""
     live_post_url = f"https://vercel.app{target_slug}.md"
     print(f"🕸️ Indexer broad-pinging search crawler infrastructure networks for link: {live_post_url}")
     try:
@@ -97,11 +111,20 @@ def ping_google_search_indexers(target_slug):
 
 def push_telegram_sales_alert(amount_sol, customer_email):
     """Fires a high-priority HTML push notification payload directly to your personal user chat window ID."""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+    raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+
+    # Fixed: Validate using the local environment variables instead of obsolete globals
+    if not raw_token or not chat_id:
         print("⚠️ Configuration Error: TELEGRAM environment tokens are missing from execution scope.")
         return
 
-    print(f"📣 Dispatching real-time corporate metrics payload to Telegram ID: {TELEGRAM_CHAT_ID}")
+    if raw_token.lower().startswith("bot"):
+        bot_token = raw_token[3:]
+    else:
+        bot_token = raw_token
+
+    print(f"📣 Dispatching real-time corporate metrics payload to Telegram ID: {chat_id}")
     
     message_text = f"""
 <b>💰 CRITICAL BUSINESS REVENUE LOGGED 💰</b>
@@ -115,9 +138,9 @@ def push_telegram_sales_alert(amount_sol, customer_email):
 <i>🟢 System Node Status: 100% Operational</i>
 """
     try:
-        url = f"https://telegram.org{TELEGRAM_BOT_TOKEN}/sendMessage"
+        url = f"https://telegram.org{bot_token}/sendMessage"
         payload = json.dumps({
-            "chat_id": str(TELEGRAM_CHAT_ID),
+            "chat_id": str(chat_id),
             "text": message_text,
             "parse_mode": "HTML"
         }).encode('utf-8')
@@ -136,5 +159,3 @@ def push_telegram_sales_alert(amount_sol, customer_email):
 
 if __name__ == "__main__":
     generate_web_dashboard()
-    ping_google_search_indexers("solanametrics")
-    push_telegram_sales_alert(0.01, "dsull1981@gmail.com")
