@@ -14,9 +14,9 @@ class handler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
         
-        # Pull raw tokens dynamically out of Vercel's environment matrix
-        raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip().replace('"', '').replace("'", "")
-        chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip().replace('"', '').replace("'", "")
+        # Plain raw token extraction straight from Vercel's console settings variables
+        clean_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+        chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
         
         telegram_status = "SKIPPED_OR_MISSING_KEYS"
         error_logs = "None"
@@ -30,25 +30,10 @@ class handler(BaseHTTPRequestHandler):
             amount_sol = escape_html(payload.get("amount") or payload.get("totalAmount", 0.01))
             signature = escape_html(payload.get("signature") or payload.get("transactionId", "fallback_cloud_sig"))
             
-            if raw_token and chat_id:
-                # Absolute, bulletproof token sanitization logic block
-                clean_token = raw_token
-                
-                # If the user put "bot" at the start of the environment variable, drop it
-                if clean_token.lower().startswith("bot"):
-                    clean_token = clean_token[3:]
-                
-                # Clean out any accidental recursive "bot" strings before or after colons
-                if ":" in clean_token:
-                    parts = clean_token.split(":")
-                    prefix = parts[0].lower().replace("bot", "").strip()
-                    suffix = parts[1].lower().replace("bot", "").strip()
-                    # Rebuild the token using the actual case-preserved original string characters
-                    clean_token = f"{raw_token.split(':')[0]}..{raw_token.split(':')[1]}".replace("bot", "").replace("BOT", "").replace("..", ":").strip()
-
+            if clean_token and chat_id:
                 message_text = f"<b>💰 CRITICAL BUSINESS REVENUE LOGGED 💰</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>Engine</b>: Autonomous Data Refinery\n📊 <b>Asset Purchased</b>: Market Intelligence Matrix\n💸 <b>Revenue Collected</b>: {amount_sol} SOL\n📨 <b>Delivery Pipeline</b>: Dispatched to Inbox\n📧 <b>Target Client</b>: <code>{customer_email}</code>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>🟢 System Node Status: 100% Operational</i>"
                 
-                # Assemble the url link parameters
+                # Direct URL assembly path structure mapping
                 url = f"https://telegram.org{clean_token}/sendMessage"
                 api_payload = json.dumps({
                     "chat_id": str(chat_id),
