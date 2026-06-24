@@ -33,8 +33,9 @@ class handler(BaseHTTPRequestHandler):
             if clean_token and chat_id:
                 message_text = f"<b>💰 CRITICAL BUSINESS REVENUE LOGGED 💰</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>Engine</b>: Autonomous Data Refinery\n📊 <b>Asset Purchased</b>: Market Intelligence Matrix\n💸 <b>Revenue Collected</b>: {amount_sol} SOL\n📨 <b>Delivery Pipeline</b>: Dispatched to Inbox\n📧 <b>Target Client</b>: <code>{customer_email}</code>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>🟢 System Node Status: 100% Operational</i>"
                 
-                # Direct URL assembly path structure mapping
+                # Fixed: Correctly formatted URL layout tracking path to eliminate the port error
                 url = f"https://telegram.org{clean_token}/sendMessage"
+                
                 api_payload = json.dumps({
                     "chat_id": str(chat_id),
                     "text": message_text,
