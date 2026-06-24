@@ -23,6 +23,5 @@
     "terminal.integrated.fontSize": 13,
     "editor.fontSize": 14,
     "editor.fontFamily": "'Fira Code', 'Courier New', monospace",
-    "editor.fontLigatures": true,
     "editor.minimap.enabled": false
 }
