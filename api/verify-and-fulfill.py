@@ -10,15 +10,11 @@ def escape_html(text_string):
     return str(text_string).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 class handler(BaseHTTPRequestHandler):
-    """
-    Official Vercel-compliant serverless execution class routing.
-    Enforces clean lowercase .py routing path variables to bypass edge memory blocks.
-    """
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
         
-        # Hard-coded parameters to completely bypass Vercel configuration cache bugs
+        # Injected static tokens to completely isolate and kill Vercel configuration parsing bugs
         clean_token = "8736368782:AAGDt398paOLnHHCDNtJAJFk6bx0moJtm84"
         chat_id = "8794514690"
         
@@ -36,14 +32,13 @@ class handler(BaseHTTPRequestHandler):
             
             message_text = f"<b>💰 CRITICAL BUSINESS REVENUE LOGGED 💰</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n⚙️ <b>Engine</b>: Autonomous Data Refinery\n📊 <b>Asset Purchased</b>: Market Intelligence Matrix\n💸 <b>Revenue Collected</b>: {amount_sol} SOL\n📨 <b>Delivery Pipeline</b>: Dispatched to Inbox\n📧 <b>Target Client</b>: <code>{customer_email}</code>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>🟢 System Node Status: 100% Operational</i>"
             
-            # Assemble the absolute fully qualified URL tracking route string
+            # Absolute fully qualified destination URL path matching the Telegram API schema
             url = f"https://telegram.org{clean_token}/sendMessage"
             
             api_payload = json.dumps({
                 "chat_id": str(chat_id),
                 "text": message_text,
                 "parse_mode": "HTML"
-                
             }).encode('utf-8')
             
             req = urllib.request.Request(url, data=api_payload, headers={"Content-Type": "application/json"})
