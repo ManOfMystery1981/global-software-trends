@@ -1,3 +1,4 @@
+# .github/workflows/llm-analysis.yml
 name: LLM Tech Analyst - Automated Report Generation
 
 on:
@@ -6,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       email:
-        description: 'Send report to this email'
+        description: 'Recipient email address (leave blank for webhook mode)'
         required: false
         default: ''
       test_mode:
-        description: 'Run in test mode'
+        description: 'Run in test mode (no email sent)'
         required: false
         default: 'false'
         type: choice
@@ -45,26 +46,32 @@ jobs:
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve &
           sleep 10
-          ollama pull qwen2:0.5b
+          # Use a much smaller, faster model for CPU
+          ollama pull tinyllama:latest
           ollama list
 
       - name: Run LLM Analyst Bot
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          CUSTOMER_EMAIL: ${{ github.event.inputs.email || 'dsull1981@gmail.com' }}
+          CUSTOMER_EMAIL: ${{ github.event.inputs.email || '' }}
           TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
           LLM_API_URL: "http://localhost:11434/api/generate"
-          LLM_MODEL: "qwen2:0.5b"
+          LLM_MODEL: "tinyllama:latest"
         run: |
           python llm_analyst_bot.py
 
       - name: Generate Full PDF Report
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          CUSTOMER_EMAIL: ${{ github.event.inputs.email || 'dsull1981@gmail.com' }}
+          CUSTOMER_EMAIL: ${{ github.event.inputs.email || '' }}
           TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
         run: |
-          python delivery_bot.py $CUSTOMER_EMAIL $([ "$TEST_MODE" == "true" ] && echo "--test")
+          if [ -n "$CUSTOMER_EMAIL" ]; then
+            echo "📧 Sending report to: $CUSTOMER_EMAIL"
+            python delivery_bot.py $CUSTOMER_EMAIL $([ "$TEST_MODE" == "true" ] && echo "--test")
+          else
+            echo "⚠️ No email provided. Skipping email delivery. Report available as artifact."
+          fi
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

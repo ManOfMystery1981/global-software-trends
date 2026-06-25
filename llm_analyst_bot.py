@@ -1,10 +1,10 @@
-# llm_analyst_bot.py - Updated with company data
+# llm_analyst_bot.py
 import os
 import json
 import requests
 from datetime import datetime
 
-# Import all data sources
+# Import your data sources
 from delivery_bot import get_latest_data
 from data_collector_bot import MarketDataCollector
 from os_data_collector import OSDataCollector
@@ -16,31 +16,43 @@ class LLMAnalystBot:
     
     def __init__(self):
         self.llm_url = os.environ.get("LLM_API_URL", "http://localhost:11434/api/generate")
-        self.model = os.environ.get("LLM_MODEL", "qwen2:0.5b")
+        # Use a smaller, faster model for CPU
+        self.model = os.environ.get("LLM_MODEL", "tinyllama:latest")
         
     def wake_llm(self, prompt):
-        """Send the prompt to Ollama and get the response."""
+        """Send the prompt to Ollama and get the response with extended timeout."""
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
             "temperature": 0.5,
-            "max_tokens": 2000,
+            "max_tokens": 1500,
             "system": "You are a Senior Technology Analyst with expertise in software development, financial markets, and technology forecasting."
         }
         
         try:
             print(f"🤖 Waking up LLM using {self.model}...")
-            response = requests.post(self.llm_url, json=payload, timeout=180)
+            print(f"⏳ This may take up to 5 minutes on CPU...")
+            
+            # Increased timeout to 300 seconds (5 minutes)
+            response = requests.post(self.llm_url, json=payload, timeout=300)
             
             if response.status_code == 200:
                 data = response.json()
                 article = data.get("response", "")
-                print(f"✅ LLM analysis complete ({len(article)} characters).")
-                return article
+                if article:
+                    print(f"✅ LLM analysis complete ({len(article)} characters).")
+                    return article
+                else:
+                    print("⚠️ LLM returned empty response")
+                    return self._generate_fallback_article()
             else:
                 print(f"❌ LLM error: {response.status_code}")
                 return self._generate_fallback_article()
+        except requests.exceptions.Timeout:
+            print("❌ LLM timeout - the model took too long to respond.")
+            print("💡 Try using a smaller model like 'tinyllama:latest'")
+            return self._generate_fallback_article()
         except Exception as e:
             print(f"❌ LLM error: {e}")
             return self._generate_fallback_article()
