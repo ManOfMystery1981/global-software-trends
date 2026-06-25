@@ -1,5 +1,30 @@
-.vercel
-.env*
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
+*.log
+*.db
+*.db.backup
 
-# Added by ggshield
-.cache_ggshield
+# Node
+node_modules/
+.vercel/
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary
+*.tmp
+*.bak
+*.old
+test_*.pdf
+server.js
+wget-log*
+
+# Backup
+backups/
+*.tar.gz

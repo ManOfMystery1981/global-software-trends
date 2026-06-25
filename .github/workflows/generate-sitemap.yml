@@ -2,12 +2,14 @@ name: Generate Sitemap
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+    - cron: '0 0 * * *'  # Daily at midnight UTC
   workflow_dispatch:      # Manual trigger
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Important: allows the workflow to push changes
     steps:
       - uses: actions/checkout@v4
       

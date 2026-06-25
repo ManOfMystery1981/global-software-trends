@@ -1,25 +1,7 @@
 {
-  "version": 2,
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/api/verify-and-fulfill",
-      "destination": "/api/verify-and-fulfill.py"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/dashboard.html"
+  "functions": {
+    "api/*.js": {
+      "runtime": "@vercel/node@2"
     }
-  ],
-  "headers": [
-    {
-      "source": "/dashboard.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    }
-  ]
+  }
 }
