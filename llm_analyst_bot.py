@@ -1,4 +1,4 @@
-# llm_analyst_bot.py - Corrected with 600 second timeout
+# llm_analyst_bot.py - Add explicit session timeout
 import os
 import json
 import requests
@@ -18,7 +18,7 @@ class LLMAnalystBot:
         self.llm_url = os.environ.get("LLM_API_URL", "http://localhost:11434/api/generate")
         self.model = os.environ.get("LLM_MODEL", "mistral:7b-instruct-q4_0")
         self.max_tokens = 2048
-        self.timeout = 6000  # ✅ 10 minutes (600 seconds) for large models
+        self.timeout = 600  # ✅ 10 minutes
         
     def generate_section(self, prompt, section_name):
         """Generate a single section of the report."""
@@ -34,7 +34,15 @@ class LLMAnalystBot:
         try:
             print(f"📝 Generating section: {section_name}...")
             print(f"⏳ This may take a few minutes (timeout: {self.timeout}s)...")
-            response = requests.post(self.llm_url, json=payload, timeout=self.timeout)
+            
+            # Create a session with a longer timeout
+            session = requests.Session()
+            # Set both connection and read timeouts
+            response = session.post(
+                self.llm_url, 
+                json=payload, 
+                timeout=(30, self.timeout)  # (connection_timeout, read_timeout)
+            )
             
             if response.status_code == 200:
                 data = response.json()
