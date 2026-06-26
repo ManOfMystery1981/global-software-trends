@@ -1,4 +1,3 @@
-# .github/workflows/llm-analysis.yml
 name: LLM Tech Analyst - Automated Report Generation
 
 on:
