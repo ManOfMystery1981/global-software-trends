@@ -1,76 +1,77 @@
 import os
-import sys
+import json
 import base64
 import resend
-import sqlite3
-import uuid
-import traceback
-from datetime import datetime
-from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
 
-# --- DATABASE LOGGING ---
-def init_db():
-    conn = sqlite3.connect('fulfillment_audit.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS reports 
-                 (id TEXT PRIMARY KEY, email TEXT, status TEXT, timestamp DATETIME)''')
-    conn.commit()
-    conn.close()
+# Authenticate the Resend API engine from your GitHub Actions secret vault
+resend.api_key = os.environ.get("RESEND_API_KEY")
 
-def log_report(report_id, email, status):
-    conn = sqlite3.connect('fulfillment_audit.db')
-    c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO reports VALUES (?, ?, ?, ?)", 
-              (report_id, email, status, datetime.now().isoformat()))
-    conn.commit()
-    conn.close()
-
-# --- PDF GENERATION ENGINE ---
-def generate_report_pdf(email, report_id):
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    styles = getSampleStyleSheet()
-    story = [
-        Paragraph(f"GLOBAL INTELLIGENCE REPORT: {report_id}", styles['Title']),
-        Spacer(1, 20),
-        Paragraph(f"Prepared for: {email}", styles['Normal']),
-        Spacer(1, 20),
-        Paragraph("Institutional Grade Analysis completed successfully.", styles['Normal'])
-    ]
-    doc.build(story)
-    return buffer.getvalue()
-
-# --- DISPATCHER ---
-def send_report_email(customer_email, pdf_data):
-    resend.api_key = os.environ.get("RESEND_API_KEY")
-    from_email = "Autonomous Data Refinery <delivery@global-market-intelligence-matrix.dedyn.io>"
-    
-    pdf_base64 = base64.b64encode(pdf_data).decode('utf-8')
-    
-    params = {
-        "from": from_email,
-        "to": [customer_email],
-        "subject": "📊 Institutional Intelligence Delivery",
-        "html": "<p>Your requested market report is attached.</p>",
-        "attachments": [{"filename": "Report.pdf", "content": pdf_base64}]
-    }
-    return resend.Emails.send(params)
-
-# --- MAIN FULFILLMENT PIPELINE ---
-def dispatch_secure_fulfillment_package(customer_email):
-    report_id = str(uuid.uuid4())
-    init_db()
-    log_report(report_id, customer_email, "INITIATED")
-    
+def dispatch_secure_fulfillment_package(html_path, csv_path):
+    """
+    Autonomous Functional Delivery Engine: Reads subscriber records from local JSON storage
+    and handles secure, isolated email routing through Resend.
+    """
     try:
-        pdf_data = generate_report_pdf(customer_email, report_id)
-        send_report_email(customer_email, pdf_data)
-        log_report(report_id, customer_email, "DELIVERED")
-        return True
-    except Exception as e:
-        print(f"Delivery failed: {e}")
-        log_report(report_id, customer_email, f"FAILED: {str(e)}")
+        print("🗄️ Loading subscriber ledger from local storage...")
+        with open("subscribers.json", "r", encoding="utf-8") as f:
+            subscribers = json.load(f)
+    except FileNotFoundError:
+        print("⚠️ subscribers.json not detected. Halting compilation.")
         return False
+    except Exception as e:
+        print(f"❌ Ledger compilation error: {e}")
+        return False
+
+    if not subscribers:
+        print("⚠️ Zero active accounts identified inside ledger. Halting delivery execution pass.")
+        return False
+
+    print(f"📧 Resend active. Preparing secure transmission for {len(subscribers)} accounts...")
+
+    # Process and convert compiled report files into standard base64 formats
+    try:
+        with open(html_path, "rb") as f:
+            html_encoded = base64.b64encode(f.read()).decode("utf-8")
+
+        with open(csv_path, "rb") as f:
+            csv_encoded = base64.b64encode(f.read()).decode("utf-8")
+    except Exception as e:
+        print(f"❌ Error reading report attachments: {e}")
+        return False
+
+    attachments = [
+        {"content": html_encoded, "filename": "Institutional_Market_Playbook.html"},
+        {"content": csv_encoded, "filename": "macro_alpha_dataset.csv"}
+    ]
+
+    # Individual loop deployment prevents clients from seeing each other's emails
+    all_successful = True
+    for email in subscribers:
+        try:
+            resend.Emails.send({
+                "from": "Institutional Research <delivery@global-market-intelligence-matrix.dedyn.io>",
+                "to": [email],
+                "subject": "📊 DATA UPDATE: Institutional Market Playbook & Alpha Dataset",
+                "html": """
+                    <div style="font-family: Arial, sans-serif; color: #1e293b; padding: 20px; line-height: 1.6;">
+                        <h3>Your Monthly Research Deliverables Are Complete</h3>
+                        <p>Dear Partner,</p>
+                        <p>Our automated market analysis engine has finished its scheduled multi-asset data collection pass for this month's macro cycles.</p>
+                        <p><strong>Your secure files are attached:</strong></p>
+                        <ul>
+                            <li><strong>Playbook Dashboard (.html):</strong> Dark-mode visual terminal interface featuring senior economist narrative commentary blocks.</li>
+                            <li><strong>Quantitative Dataset (.csv):</strong> Clean, flat-file structured dataset optimized for portfolio backtesting.</li>
+                        </ul>
+                        <br>
+                        <p style="font-size: 11px; color: #64748b;">Securitized transmission distributed via automated GitHub Agent pipelines.</p>
+                    </div>
+                """,
+                "attachments": attachments
+            })
+            print(f"✅ Secure payload successfully transmitted to: {email}")
+        except Exception as mail_error:
+            print(f"❌ Resend delivery failure for {email}: {mail_error}")
+            all_successful = False
+           
+    return all_successful
+
