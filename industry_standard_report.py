@@ -9,7 +9,7 @@ class IndustryStandardReport:
     """
     def generate_report(self, playbook, expert_narrative):
         csv_filename = "market_anomaly_dataset.csv"
-        csv_fields = ["ticker", "category", "price", "trend", "conviction_score", "z_score", "probability_pct", "kelly_fraction_pct"]
+        csv_fields = ["ticker", "category", "price", "trend", "composite_signal_score", "z_score"]
         
         try:
             with open(csv_filename, mode='w', newline='', encoding='utf-8') as f:
@@ -18,25 +18,13 @@ class IndustryStandardReport:
                 for p in playbook:
                     metrics_block = p.get("metrics", {})
                     
-                    # Extract variables safely from the type-enforced sub-objects
-                    ticker = p.get("asset", "UNKNOWN")
-                    category = metrics_block.get("category", "AI Infrastructure")
-                    price = metrics_block.get("price", 0.0)
-                    trend = p.get("classification", "NOMINAL_VARIANCE")
-                    conviction = p.get("composite_score", 0.0)
-                    z_score = metrics_block.get("z_score", 0.0)
-                    prob = metrics_block.get("probability_pct", 50.0)
-                    kelly = metrics_block.get("kelly_fraction_pct", 0.0)
-                    
                     row_data = {
-                        "ticker": ticker,
-                        "category": category,
-                        "price": f"{price:.2f}",
-                        "trend": trend,
-                        "conviction_score": f"{conviction:.1f}",
-                        "z_score": f"{z_score:.2f}",
-                        "probability_pct": f"{prob:.1f}",
-                        "kelly_fraction_pct": f"{kelly:.1f}"
+                        "ticker": p.get("asset", "UNKNOWN"),
+                        "category": metrics_block.get("category", "AI Infrastructure"),
+                        "price": f"{metrics_block.get('price', 0.0):.2f}",
+                        "trend": p.get("classification", "NOMINAL_VARIANCE"),
+                        "composite_signal_score": f"{p.get('composite_score', 0.0):.1f}",
+                        "z_score": f"{metrics_block.get('z_score', 0.0):.2f}"
                     }
                     writer.writerow(row_data)
             print(f"✅ Quantitative CSV Dataset Exported: {csv_filename}")
@@ -55,7 +43,6 @@ class IndustryStandardReport:
             confidence_band = p.get("confidence_band", "Low")
             source_name = metrics_block.get("source", "Public API Endpoint")
             
-            # Non-advisory color scheme logic mapping matching research outputs
             badge_style = "background:#10b981; color:#0f172a;" if "Very Strong" in trend_label or "Strong" in trend_label else "background:#475569; color:#cbd5e1;"
             
             rows += f"""
@@ -89,20 +76,14 @@ class IndustryStandardReport:
                 .chart-box {{ background: #0f172a; padding: 20px; border-radius: 8px; border: 1px solid #334155; text-align: center; }}
                 table {{ width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; font-size: 13px; }}
                 th {{ padding: 12px; background: #0f172a; color: #94a3b8; font-size: 11px; text-transform: uppercase; }}
-                hr {{ border: 0; height: 1px; background: #334155; margin: 30px 0; }}
             </style>
         </head>
         <body>
             <div class="container">
-                <h1>🏛️ CROSS-ASSET ANOMALY RESEARCH BRIEF</h1>
-                
+                <h1>🏛 shrink-wrap MARKET ANOMALY RESEARCH BRIEF</h1>
                 {expert_narrative}
-                
                 <h2>📊 Statistical Divergence Distributions</h2>
-                <div class="visual-grid">
-                    {svg_charts}
-                </div>
-
+                <div class="visual-grid">{svg_charts}</div>
                 <h2>📋 Anomaly Research Ledger</h2>
                 <table>
                     <tr style='background:#0f172a;'>

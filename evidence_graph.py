@@ -9,7 +9,6 @@ class EvidenceGraph:
     raw source payloads and generating auditable verification hashes.
     """
     def log_and_hash_payload(self, asset_key, raw_dict):
-        """Generates a cryptographic fingerprint and stores raw telemetry data."""
         serialized = json.dumps(raw_dict, sort_keys=True, separators=(",", ":"), default=str)
         payload_hash = "sha256:" + hashlib.sha256(serialized.encode('utf-8')).hexdigest()
         
@@ -25,26 +24,21 @@ class EvidenceGraph:
         return payload_hash, raw_path
 
     def generate_audit_lineage(self, asset_profile, payload_hash):
-        """Builds a defensible data tracking string for the report tables."""
-        # Clean safe fallback retrieval mapping out of the nested input metrics structure
         metrics_block = asset_profile.get("metrics", {})
         source_name = metrics_block.get("source", "Public Alternative Data Stream")
         spot_price = metrics_block.get("price", 0.0)
         z_score = metrics_block.get("z_score", 0.0)
-        prob_pct = metrics_block.get("probability_pct", 50.0)
         
         return (
-            f"Endpoint Source: [{source_name}] | "
+            f"Source Node: [{source_name}] | "
             f"Hash Reference: {payload_hash[:16]}... | "
-            f"Retrieval Window: {asset_profile.get('generated_at_utc', 'N/A')} | "
-            f"Statistical Trace: Value=${spot_price:,.2f}, Z-Score={z_score:+.2f}, Confidence={prob_pct:.1f}%."
+            f"Statistical Trace: Value=${spot_price:,.2f}, Z-Score={z_score:+.2f}"
         )
 
     def append_appendix_logs(self, complete_playbook, hashes_map):
-        """Assembles an auditable compliance table for the report footer."""
         html_appendix = "<div style='margin-top: 50px; border-top: 3px dashed #475569; padding-top: 25px;'>"
         html_appendix += "<h2 style='color:#f1f5f9;'>V. EVIDENCE APPENDIX & DATA LINEAGE LOGS</h2>"
-        html_appendix += "<p style='color:#94a3b8; font-size:12px; margin-bottom:15px;'>Every parameter inside this research brief is traceable to public endpoints. Cryptographic verification hashes are archived below.</p>"
+        html_appendix += "<p style='color:#94a3b8; font-size:12px; margin-bottom:15px;'>Every parameter inside this brief is traceable. Cryptographic verification hashes are archived below.</p>"
         html_appendix += "<table style='width:100%; font-size:11px; font-family:monospace; color:#94a3b8; border-collapse: collapse;'>"
         html_appendix += "<tr style='background:#0f172a;'><th>Asset Key</th><th>Verifiable Data Source</th><th>Retrieval Timestamp</th><th>SHA-256 Payload Hash</th><th>Signal Intensity</th></tr>"
         
@@ -54,7 +48,6 @@ class EvidenceGraph:
             metrics_block = item.get("metrics", {})
             source_name = metrics_block.get("source", "Public API Stream Endpoint")
             timestamp = item.get("generated_at_utc", "N/A")
-            z_score = metrics_block.get("z_score", 0.0)
             score = item.get("composite_score", 0.0)
             
             html_appendix += f"""
