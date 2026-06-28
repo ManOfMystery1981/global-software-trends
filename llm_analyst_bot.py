@@ -54,7 +54,6 @@ class LLMAnalystBot:
                 historical_avg_vol = data.get('historical_avg_volume', 5500000)
                 volume_delta = (volume_24h / historical_avg_vol) if historical_avg_vol > 0 else 1.0
                 
-                # Model realistic metadata metrics to feed your strict 5-factor inputs
                 normalized_metrics = {
                     "price_change_24h_pct": volume_delta * 2.5,
                     "price_change_7d_pct": volume_delta * 5.2,
@@ -74,7 +73,7 @@ class LLMAnalystBot:
                     "volatility_30d_pct": vol * 100,
                     "max_drawdown_30d_pct": 15.0,
                     "concentration_top10_pct": 35.0,
-                    "data_completeness_pct": 95.0, # Complete telemetry metadata marker
+                    "data_completeness_pct": 95.0,
                     "volatility": vol,
                     "category": cat,
                     "price": spot,
@@ -84,15 +83,11 @@ class LLMAnalystBot:
                     "source": data.get('source', 'Public API Stream Endpoint')
                 }
                 
-                # 1. Run absolute deterministic Dataclass Signal Ingestion
                 signal_object = generate_signal(ticker, normalized_metrics)
                 signal_dict = signal_object.to_dict()
                 
-                # Map source traces directly out of the cryptographic fingerprint logs
                 payload_hash, _ = self.evidence_layer.log_and_hash_payload(ticker, data)
                 hashes_map[ticker] = signal_dict["output_hash"]
-                
-                # Re-integrate the explicit data dictionary back into your list mapping
                 playbook.append(signal_dict)
                 
                 mapped_payload = {"price": spot, "change_24h": volume_delta}
@@ -101,17 +96,15 @@ class LLMAnalystBot:
                 elif "Hardware" in cat:
                     stock_data_map[ticker] = mapped_payload
 
-        # Sort playbook matrix by composite score hierarchy
         playbook = sorted(playbook, key=lambda x: x["composite_score"], reverse=True)
 
-        # 4. CONSTRUCT RESEARCH BRIEFS WITH AUDIT LINKS
         sections_to_build = [
             "executive_arbitrage_summary", "regional_saas_arbitrage",
             "api_latency_arbitrage", "crypto_arbitrage_spread", "data_arbitrage_execution"
         ]
         compiled_expert_narrative = ""
         
-        evidence_context = "\n## 📋 AUDIT EVIDENCE LOGS (Cite these tracking elements in your briefs):\n"
+        evidence_context = "\n## 📋 AUDIT EVIDENCE LOGS:\n"
         for item in playbook[:4]:
             evidence_context += f"• Asset {item['asset']}: {self.evidence_layer.generate_audit_lineage(item, item['output_hash'])}\n"
 
@@ -130,7 +123,6 @@ class LLMAnalystBot:
             except Exception:
                 compiled_expert_narrative += f"\n<h2>{section.replace('_',' ').title()}</h2><p>Signal verification complete. Conditions within baseline variance.</p>"
 
-        # 5. RUN STRATEGIC ALLOCATION INSIGHTS
         advisory_prompt = get_hedge_fund_advisor_prompt(crypto_data_map, stock_data_map, {"top_100": []}) + evidence_context
         try:
             advisor_output = self.economist.synthesize_market_playbook(advisory_prompt)
@@ -138,7 +130,6 @@ class LLMAnalystBot:
         except Exception:
             pass
 
-        # 6. RUN ACADEMIC SUMMARY BRIEF
         academic_prompt = get_academic_economist_synopsis_prompt(playbook) + evidence_context
         try:
             academic_output = self.economist.synthesize_market_playbook(academic_prompt)
@@ -146,24 +137,27 @@ class LLMAnalystBot:
         except Exception:
             pass
 
-        # 7. INJECT COMPLIANCE AUDIT REGISTRY APPENDIX
         compiled_expert_narrative += self.evidence_layer.append_appendix_logs(playbook, hashes_map)
 
-        # 8. Render Visual Assets & Transmit Deliverables
-        html_path, csv_path = self.report_engine.generate_report(playbook, compiled_expert_narrative)
-        print(f"✅ Defensible Visual Playbook Generated: {html_path}")
-       
-        # Save a historical copy into your sample_reports folder as a permanent artifact
+        # 5. Build report directly to temporary path variables
+        temp_html, temp_csv = self.report_engine.generate_report(playbook, compiled_expert_narrative)
+        
+        # Explicit path variable target migration to prevent file lookup drops
+        html_path = "sample_reports/ai_infrastructure_brief_current.html"
+        csv_path = "sample_reports/ai_infrastructure_dataset_current.csv"
+        
         try:
-            os.replace("playbook.html", "sample_reports/ai_infrastructure_brief_current.html")
-            os.replace("macro_alpha_dataset.csv", "sample_reports/ai_infrastructure_dataset_current.csv")
-            html_path = "sample_reports/ai_infrastructure_brief_current.html"
-            csv_path = "sample_reports/ai_infrastructure_dataset_current.csv"
-        except Exception:
-            pass
+            os.makedirs("sample_reports", exist_ok=True)
+            os.replace(temp_html, html_path)
+            os.replace(temp_csv, csv_path)
+            print(f"✅ Defensible Visual Playbook Generated: {html_path}")
+        except Exception as e:
+            html_path, csv_path = temp_html, temp_csv
+            print(f"⚠️ Falling back to local directory routing tracks: {e}")
 
         print(f"📦 Handing off generated assets to Delivery Agent loop...")
         try:
+            # FIXED FIX: We pass the exact, finalized archival paths down to the dispatcher function
             dispatch_secure_fulfillment_package(html_path, csv_path)
             print("🚚 Delivery pipeline execution loop finalized successfully.")
         except Exception as e:
