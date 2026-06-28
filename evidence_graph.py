@@ -29,9 +29,10 @@ class EvidenceGraph:
         spot_price = metrics_block.get("price", 0.0)
         z_score = metrics_block.get("z_score", 0.0)
         
+        # Fixed: Prints the entire un-truncated validation footprint
         return (
             f"Source Node: [{source_name}] | "
-            f"Hash Reference: {payload_hash[:16]}... | "
+            f"Immutable Hash Track: {payload_hash} | "
             f"Statistical Trace: Value=${spot_price:,.2f}, Z-Score={z_score:+.2f}"
         )
 

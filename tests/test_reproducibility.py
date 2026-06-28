@@ -1,12 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env module python3
 import json
 import unittest
 from signal_engine import generate_signal
 
 class TestSignalEngineReproducibility(unittest.TestCase):
     """
-    Diligence Proof: Verifies that the multi-factor signal engine is completely
-    deterministic and independent of random runtime generation.
+    Strategic Diligence Proof: Asserts factor-level score identity matches
+    and cryptographic hash stability across separate pipeline calculation passes.
     """
     def test_deterministic_reproducibility(self):
         fixture_input = {
@@ -16,18 +16,24 @@ class TestSignalEngineReproducibility(unittest.TestCase):
             "exchange_count": 10, "source_count": 5, "mention_velocity": 1.5,
             "repo_activity_score": 75, "news_count_24h": 4, "social_volume_delta": 1.2,
             "volatility_30d_pct": 25, "max_drawdown_30d_pct": 10, "concentration_top10_pct": 40,
-            "data_completeness_pct": 100, "volatility": 0.15
+            "data_completeness_pct": 100, "volatility": 0.15, "category": "AI_Hardware", "price": 125.0, "z_score": 1.2, "source": "Verification Fixture"
         }
         
-        # Run identical calculation loops sequentially
         run_a = generate_signal("TEST_ASSET", fixture_input).to_dict()
         run_b = generate_signal("TEST_ASSET", fixture_input).to_dict()
         
-        # Enforce exact identity matches across input and output cryptographic hashes
+        # 1. Enforce Parent Level Hash Identity Matches
         self.assertEqual(run_a["input_hash"], run_b["input_hash"])
         self.assertEqual(run_a["output_hash"], run_b["output_hash"])
         self.assertEqual(run_a["composite_score"], run_b["composite_score"])
-        print("\n✅ DETERMINISM VERIFIED: Run A Hash matches Run B Hash exactly.")
+        
+        # 2. Enforce Factor Level Array Core Element Matches
+        for idx, factor in enumerate(run_a["factor_scores"]):
+            match_factor = run_b["factor_scores"][idx]
+            self.assertEqual(factor["score"], match_factor["score"])
+            self.assertEqual(factor["name"], match_factor["name"])
+            
+        print("\n✅ STRATEGIC AUDIT PASS: Factor-level and pipeline determinism validated.")
 
 if __name__ == "__main__":
     unittest.main()

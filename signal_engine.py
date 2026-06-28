@@ -79,20 +79,21 @@ class MultiFactorSignalEngine:
             
             scored_playbook.append({
                 "ticker": asset,
-                "category": metrics["category"],
-                "price": metrics["price"],
+                "category": metrics.get("category", "AI Infrastructure"),
+                "price": safe_float(metrics.get("price")),
                 "trend": signal_status,
                 "momentum_score": momentum,
                 "anomaly_score": anomaly,
                 "narrative_score": narrative,
                 "liquidity_score": liquidity,
                 "conviction_score": composite_score,
-                "z_score": metrics["z_score"],
-                "probability_pct": metrics["probability_pct"],
-                "kelly_fraction_pct": metrics["kelly_fraction_pct"],
-                "source": metrics["source"],
+                "z_score": z,
+                "model_score": safe_float(metrics.get("model_score", 50.0)),
+                "signal_strength_pct": safe_float(metrics.get("signal_strength_pct", 50.0)),
+                "source": metrics.get("source", "Public Exchange Feed"),
                 "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
             })
+
             
         return sorted(scored_playbook, key=lambda x: x["conviction_score"], reverse=True)
 
