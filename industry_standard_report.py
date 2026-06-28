@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import csv
 import os
 
@@ -7,7 +8,7 @@ class IndustryStandardReport:
     responsive, dark-mode terminal interfaces embedded with inline vector charts.
     """
     def generate_report(self, playbook, expert_narrative):
-        csv_filename = "macro_alpha_dataset.csv"
+        csv_filename = "market_anomaly_dataset.csv"
         csv_fields = ["ticker", "category", "price", "trend", "conviction_score", "z_score", "probability_pct", "kelly_fraction_pct"]
         
         try:
@@ -15,30 +16,58 @@ class IndustryStandardReport:
                 writer = csv.DictWriter(f, fieldnames=csv_fields)
                 writer.writeheader()
                 for p in playbook:
+                    metrics_block = p.get("metrics", {})
+                    
+                    # Extract variables safely from the type-enforced sub-objects
+                    ticker = p.get("asset", "UNKNOWN")
+                    category = metrics_block.get("category", "AI Infrastructure")
+                    price = metrics_block.get("price", 0.0)
+                    trend = p.get("classification", "NOMINAL_VARIANCE")
+                    conviction = p.get("composite_score", 0.0)
+                    z_score = metrics_block.get("z_score", 0.0)
+                    prob = metrics_block.get("probability_pct", 50.0)
+                    kelly = metrics_block.get("kelly_fraction_pct", 0.0)
+                    
                     row_data = {
-                        "ticker": p.get("ticker"), "category": p.get("category"),
-                        "price": f"{p.get('price'):.2f}", "trend": p.get("trend"),
-                        "conviction_score": str(p.get("conviction_score")), "z_score": f"{p.get('z_score', 0.0):.2f}",
-                        "probability_pct": f"{p.get('probability_pct', 50.0):.1f}",
-                        "kelly_fraction_pct": f"{p.get('kelly_fraction_pct', 0.0):.1f}"
+                        "ticker": ticker,
+                        "category": category,
+                        "price": f"{price:.2f}",
+                        "trend": trend,
+                        "conviction_score": f"{conviction:.1f}",
+                        "z_score": f"{z_score:.2f}",
+                        "probability_pct": f"{prob:.1f}",
+                        "kelly_fraction_pct": f"{kelly:.1f}"
                     }
                     writer.writerow(row_data)
+            print(f"✅ Quantitative CSV Dataset Exported: {csv_filename}")
         except Exception as e:
             print(f"Error generating CSV: {e}")
 
         rows = ""
         for p in playbook:
-            badge_style = "background:#10b981; color:#0f172a;" if p['trend'] == "EXTREME_ANOMALY" else "background:#475569; color:#cbd5e1;"
+            metrics_block = p.get("metrics", {})
+            ticker = p.get("asset", "UNKNOWN")
+            category = metrics_block.get("category", "AI Infrastructure").replace('_', ' ')
+            price = metrics_block.get("price", 0.0)
+            trend_label = p.get("classification", "NOMINAL_VARIANCE")
+            conviction = p.get("composite_score", 0.0)
+            z_score = metrics_block.get("z_score", 0.0)
+            confidence_band = p.get("confidence_band", "Low")
+            source_name = metrics_block.get("source", "Public API Endpoint")
+            
+            # Non-advisory color scheme logic mapping matching research outputs
+            badge_style = "background:#10b981; color:#0f172a;" if "Very Strong" in trend_label or "Strong" in trend_label else "background:#475569; color:#cbd5e1;"
+            
             rows += f"""
             <tr style='border-bottom: 1px solid #334155;'>
-                <td style='padding:12px;'><strong>{p['ticker']}</strong></td>
-                <td style='padding:12px;'>{p['category'].replace('_',' ')}</td>
-                <td style='padding:12px;'>${p['price']:,.2f}</td>
-                <td style='padding:12px;'><span style='padding:3px 6px; border-radius:4px; font-weight:bold; font-size:11px; {badge_style}'>{p['trend']}</span></td>
-                <td style='padding:12px; color:#38bdf8;'><code>{p['z_score']:+.2f}</code></td>
-                <td style='padding:12px;'><strong>{p['conviction_score']}/100</strong></td>
-                <td style='padding:12px; color:#10b981;'>{p['probability_pct']:.1f}%</td>
-                <td style='padding:12px; font-size:12px; color:#94a3b8;'>{p['source']}</td>
+                <td style='padding:12px;'><strong>{ticker}</strong></td>
+                <td style='padding:12px;'>{category}</td>
+                <td style='padding:12px;'>${price:,.2f}</td>
+                <td style='padding:12px;'><span style='padding:3px 6px; border-radius:4px; font-weight:bold; font-size:11px; {badge_style}'>{trend_label}</span></td>
+                <td style='padding:12px; color:#38bdf8;'><code>{z_score:+.2f}</code></td>
+                <td style='padding:12px;'><strong>{conviction:.1f}/100</strong></td>
+                <td style='padding:12px; color:#10b981;'>{confidence_band}</td>
+                <td style='padding:12px; font-size:12px; color:#64748b;'>{source_name}</td>
             </tr>
             """
 
@@ -49,7 +78,7 @@ class IndustryStandardReport:
         <html>
         <head>
             <meta charset="utf-8">
-            <title>AI Infrastructure Market Intelligence Playbook</title>
+            <title>Cross-Asset Anomaly Research Brief</title>
             <style>
                 body {{ font-family: 'Inter', Arial, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; margin: 0; line-height: 1.6; }}
                 .container {{ max-width: 1200px; margin: auto; background: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }}
@@ -65,7 +94,7 @@ class IndustryStandardReport:
         </head>
         <body>
             <div class="container">
-                <h1>🏛️ AI INFRASTRUCTURE MARKET INTELLIGENCE MATRIX</h1>
+                <h1>🏛️ CROSS-ASSET ANOMALY RESEARCH BRIEF</h1>
                 
                 {expert_narrative}
                 
@@ -74,11 +103,11 @@ class IndustryStandardReport:
                     {svg_charts}
                 </div>
 
-                <h2>📋 Tactical Multi-Factor Ledger</h2>
+                <h2>📋 Anomaly Research Ledger</h2>
                 <table>
                     <tr style='background:#0f172a;'>
-                        <th>Asset Key</th><th>Niche Category</th><th>Spot Price</th><th>Signal Status</th>
-                        <th>Z-Divergence</th><th>Signal Intensity</th><th>Signal Confidence</th><th>Audit Source</th>
+                        <th>Asset Key</th><th>Niche Category</th><th>Spot Price</th><th>Research Status</th>
+                        <th>Z-Divergence</th><th>Signal Intensity</th><th>Confidence Band</th><th>Audit Source</th>
                     </tr>
                     {rows}
                 </table>
@@ -96,18 +125,20 @@ class IndustryStandardReport:
     def _compile_vector_visuals(self, target_assets):
         svg_blocks = ""
         for a in target_assets:
-            z = abs(a.get('z_score', 1.0))
+            metrics_block = a.get("metrics", {})
+            ticker = a.get("asset", "UNKNOWN")
+            conviction = a.get("composite_score", 0.0)
+            z = abs(metrics_block.get('z_score', 1.0))
             height = min(int(z * 22), 75)
-            color = "#10b981" if a['trend'] == "EXTREME_ANOMALY" else "#38bdf8"
             
             svg_blocks += f"""
             <div class="chart-box">
-                <span style='font-size:12px; font-weight:bold; color:#f1f5f9;'>{a['ticker']} Anomaly Curve</span>
+                <span style='font-size:12px; font-weight:bold; color:#f1f5f9;'>{ticker} Anomaly Curve</span>
                 <svg width="220" height="90" style="background:#090d16; border-radius:4px; margin-top:10px;">
-                    <path d="M10 80 Q 60 {100 - height}, 110 {90 - height} T 210 80" fill="none" stroke="{color}" stroke-width="3"/>
+                    <path d="M10 80 Q 60 {100 - height}, 110 {90 - height} T 210 80" fill="none" stroke="#38bdf8" stroke-width="3"/>
                     <line x1="10" y1="80" x2="210" y2="80" stroke="#334155" stroke-dasharray="3"/>
                     <circle cx="110" cy="{90 - height}" r="4" fill="#f43f5e"/>
-                    <text x="12" y="22" fill="#64748b" font-size="9" font-family="monospace">Intensity: {a['conviction_score']}/100</text>
+                    <text x="12" y="22" fill="#64748b" font-size="9" font-family="monospace">Intensity: {conviction:.1f}/100</text>
                 </svg>
             </div>
             """

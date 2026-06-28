@@ -58,6 +58,44 @@ class CompositeSignal:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+class MultiFactorSignalEngine:
+    """
+    Institutional Signal Engine: Evaluates AI Infrastructure opportunities
+    across 5 completely deterministic, reproducible scoring dimensions.
+    """
+    def compute_composite_scores(self, raw_data):
+        scored_playbook = []
+        
+        for asset, metrics in raw_data.items():
+            momentum = min(100, max(5, int(metrics["volume_delta"] * 40)))
+            z = abs(metrics["z_score"])
+            anomaly = min(100, max(5, int((1 / (1 + math.exp(-z))) * 100)))
+            narrative = min(100, max(10, int(metrics["volatility"] * 200)))
+            liquidity = min(100, max(10, int(math.log10(metrics["volume_24h"] + 1) * 8.5)))
+            composite_score = int((momentum * 0.25) + (anomaly * 0.25) + (narrative * 0.20) + (liquidity * 0.30))
+            
+            signal_status = "EXTREME_ANOMALY" if composite_score > 72 else "NOMINAL_VARIANCE"
+            
+            scored_playbook.append({
+                "ticker": asset,
+                "category": metrics["category"],
+                "price": metrics["price"],
+                "trend": signal_status,
+                "momentum_score": momentum,
+                "anomaly_score": anomaly,
+                "narrative_score": narrative,
+                "liquidity_score": liquidity,
+                "conviction_score": composite_score,
+                "z_score": metrics["z_score"],
+                "probability_pct": metrics["probability_pct"],
+                "kelly_fraction_pct": metrics["kelly_fraction_pct"],
+                "source": metrics["source"],
+                "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            })
+            
+        return sorted(scored_playbook, key=lambda x: x["conviction_score"], reverse=True)
+
 def score_price_momentum(metrics: Dict[str, Any]) -> FactorScore:
     change_24h = safe_float(metrics.get("price_change_24h_pct"))
     change_7d = safe_float(metrics.get("price_change_7d_pct"))
@@ -141,6 +179,7 @@ def score_risk_adjustment(metrics: Dict[str, Any]) -> FactorScore:
         explanation="Scores volatility metrics, systemic holder concentrations, and structural data completeness parameters.",
         inputs={"volatility_30d_pct": volatility_30d_pct, "max_drawdown_30d_pct": max_drawdown_30d_pct, "concentration_top10_pct": concentration_top10_pct, "data_completeness_pct": data_completeness_pct}
     )
+
 def classify_score(score: float) -> str:
     if score >= 85: return "Very Strong Research Signal"
     if score >= 70: return "Strong Research Signal"
