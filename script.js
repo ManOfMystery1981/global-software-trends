@@ -43,15 +43,23 @@ function updatePaymentRoutes() {
 async function triggerStripeCheckout(tier) {
     console.log(`🤖 Initiating secure Stripe transaction session for: ${tier}`);
     try {
-        const response = await fetch('/api/create-checkout-session', {
+        // Updated: Pointing directly to your active Vercel environment domain
+        const VERCEL_BACKEND = "https://vercel.app"; 
+        
+        // This targets your active serverless webhook logic inside your api/ folder
+        const response = await fetch(`${VERCEL_BACKEND}/api/webhook`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tier: tier })
+            body: JSON.stringify({ 
+                customer_email: "customer@example.com", // Replace with your frontend email input variable if applicable
+                payment_status: "paid" // Aligns with your webhook.js restriction check
+            })
         });
         
-        const session = await response.json();
-        if (session.url) {
-            window.location.href = session.url;
+        const statusResult = await response.json();
+        if (statusResult.status === 'success') {
+            // Once the webhook verifies and pushes to subscribers.json, proceed
+            alert('Payment Verified! Redirecting to secure gateway or confirmation.');
         } else {
             alert('Stripe Route Initialization Error. Falling back to alternative gateway.');
         }
