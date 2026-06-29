@@ -44,7 +44,7 @@ async function triggerStripeCheckout(tier) {
     console.log(`🤖 Initiating secure Stripe transaction session for: ${tier}`);
     try {
         // Updated: Pointing directly to your active Vercel environment domain
-        const VERCEL_BACKEND = "https://vercel.app"; 
+        const VERCEL_BACKEND = "https://autonomous-data-refiner-git-dep-20244c-autonomous-data-refinery.vercel.app";
         
         // This targets your active serverless webhook logic inside your api/ folder
         const response = await fetch(`${VERCEL_BACKEND}/api/webhook`, {
