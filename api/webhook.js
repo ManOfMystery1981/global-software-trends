@@ -5,16 +5,6 @@ const OWNER = "manofmystery1981";
 const REPO = "Global-Market-Intelligence-Matrix";
 const FILE_PATH = "subscribers.json";
 
-// Helper function to read the raw request buffer stream from Vercel
-async function getRequestBody(req) {
-    const buffers = [];
-    for await (const chunk of req) {
-        buffers.push(chunk);
-    }
-    const rawBuffer = Buffer.concat(buffers).toString();
-    return rawBuffer ? JSON.parse(rawBuffer) : {};
-}
-
 export default async function handler(req, res) {
     // Enforce strict method isolation
     if (req.method !== 'POST') {
@@ -22,9 +12,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Safely stream and parse the incoming JSON request body
-        const payload = await getRequestBody(req);
-        const { customer_email, payment_status } = payload;
+        // Vercel parses the incoming JSON body automatically out of the box
+        const payload = req.body;
+        const { customer_email, payment_status } = payload || {};
 
         // Structural guard validation checks
         if (!customer_email) {
