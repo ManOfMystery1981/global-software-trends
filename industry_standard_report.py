@@ -101,7 +101,9 @@ class IndustryStandardReport:
         </html>
         """
         
-        html_filename = "playbook.html"
+        import os
+        os.makedirs("sample_reports", exist_ok=True)
+        html_filename = "sample_reports/ai_infrastructure_brief_current.html"
         with open(html_filename, "w", encoding='utf-8') as f:
             f.write(html_template)
             
